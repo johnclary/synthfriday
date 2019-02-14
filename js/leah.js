@@ -1,5 +1,3 @@
-// set the timier to hold blackout, then flicker
-
 // some global params
 var letterRows = 10; // aka height
 var letterColumns = 7; // aka width. includes one blank column for spacing
@@ -167,7 +165,6 @@ document.querySelector('#play').addEventListener('click', function() {
             var counter = 0;
             var rainbowGo = false;
             var i = setInterval(function(){
-                // do your thing
 
                 counter++;
                 if (counter == 2) {
@@ -189,7 +186,7 @@ document.querySelector('#play').addEventListener('click', function() {
                 } else if (counter == 21 || counter == 23 || counter == 24 || counter == 26 || counter == 28 || counter == 30 ) {
                     cycleColumns("rainbow");
                 } else if (counter == 32) {
-                    svg.selectAll(".active")
+                    d3.selectAll(".active")
                         .transition()
                         .duration(1000)
                         .attr("r", 0)
@@ -198,25 +195,19 @@ document.querySelector('#play').addEventListener('click', function() {
                         .classed("active", false);
                 } else if (counter == 34 || counter == 36 || counter == 38 || counter == 40 || counter == 42 || counter == 44 ) {
                     cycleColumns("rainbow");
+
+                } else if (counter == 45) {
+                    clearInterval();
                 }
 
             }, 1000);
 
-            // put timer here, do newword after a sec
-            // then flicker
-            // newWords([g_,o,o,d],[t,r,o,u,b,l,e], false);
         } else if (renderThrottle == throttleRate && hold == false) { 
             // default pass
             console.log("RAINBOW");
             cycleColumns("rainbow");
             renderThrottle = 0;
             count++;
-        }
-
-        if (flickerTime == true) {
-            console.log("FLICKER");
-            cycleColumns("flicker");
-            flickerTime == false;
         }
 
         // Get frequency data
