@@ -1,13 +1,25 @@
 // line borrowed from:
 // https://bl.ocks.org/gordlea/27370d1eea8464b04538e6d8ced39e89
 
-var bits = 50;
+var bits = 40;
+var multiplier = 3;
 
 count = 0;
 
 var frequencyData;
 
-var width = window.innerWidth, height = window.innerHeight;
+var width = window.innerWidth;
+var height = window.innerHeight;
+
+var textPos = height*.75;
+
+var removeFactor = -1*height; 
+
+var widenSpreadRange = true;
+var spreadRangeMin = 2000
+var spreadRangeLimit = spreadRangeMin;
+var spreadRangeMax = 20000;
+var spreadSpeed = 100;
 
 // linear scale for init line color
 var color = d3.scaleSequential(d3.interpolatePlasma).domain([0,200]);
@@ -21,26 +33,31 @@ var colorPow = d3.scaleSequential(d3.interpolatePlasma).domain([1,0]);
 var strokePow = d3.scalePow().exponent(4).range([0,1]);
 
 // power scale that sets the rate of line sink
-// increse begin range to increase speed. reduce exponent to increase separation (?)
-var sinkPow = d3.scalePow().exponent(.45).range([5, 0]);
+// increse begin range to increase dropspeed/separation
+// decrease exponent and begin range to lower viewing angle
+var sinkPow = d3.scalePow().exponent(7).range([10, 0]);
 
 // power scale to set opacity higher as lines sink
-var opacityPow = d3.scalePow().exponent(5).range([1, .5]);
+var opacityPow = d3.scalePow().exponent(5).range([1, .7]);
+
+var yScalePow = d3.scalePow().exponent(7).range([0, 255]);
 
 var xScale = d3.scaleLinear()
-    .domain([0, bits-1]) // input
+    .domain([0, (bits*multiplier)-1]) // input
     .range([0, width]); // output
 
 var yScale = d3.scaleLinear()
-    .domain([0, 300]) // input 
-    .range([height/2, 0]); // output 
+    .domain([0, 255]) // increase the extent to increase the relative height. where the invput value is the frequency, min 0, max 255
+    .range([height/3, 0]); // reduce the init exent of range to raise the init drawing height higher
 
 var line = d3.line()
     .x(function(d, i) { return xScale(i); })
     .y(function(d) { return yScale(d); })
     .curve(d3.curveMonotoneX)
 
-document.querySelector('#play').addEventListener('click', function() {
+var track = document.getElementsByTagName("audio")[0]
+
+track.addEventListener("playing", function() {
 
     var element = document.getElementById("play");
     element.parentNode.removeChild(element);
@@ -52,8 +69,8 @@ document.querySelector('#play').addEventListener('click', function() {
         .attr("height", height);
 
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    var audioElement = document.getElementById('audioElement');
-    audioElement.play();
+    // var audioElement = document.getElementById('audioElement');
+    // audioElement.play();
 
     var audioSrc = audioCtx.createMediaElementSource(audioElement);
     var analyser = audioCtx.createAnalyser();
@@ -70,7 +87,7 @@ document.querySelector('#play').addEventListener('click', function() {
         // loop
         requestAnimationFrame(animateChart);
         
-        if (++count % 2){
+        if (++count % 4){
             // animate every other frame
             return false;
         }
@@ -78,9 +95,15 @@ document.querySelector('#play').addEventListener('click', function() {
         if (count < 450){
             addText();
         }
+        
+        rollWindow();
 
         analyser.getByteFrequencyData(frequencyData);
 
+        lineData = Array.from(frequencyData);
+
+        lineData = lineData.concat(lineData).concat(lineData);
+        
         var avgFreq = avg(frequencyData);
 
         var stroke = color(avgFreq);        
@@ -89,7 +112,7 @@ document.querySelector('#play').addEventListener('click', function() {
         xScale.range([0, width]);
 
         svg.append("path")
-            .datum(Array.from(frequencyData))
+            .datum(Array.from(lineData).map(x => yScalePow(x/255)))
             .attr("class", "line")
             .attr("stroke", stroke)
             .attr("opacity", .05) 
@@ -132,8 +155,8 @@ function sink() {
                 return value - sinkPow(i/size)
             } );
 
-            if (avg(sunkData) < -350) {
-                // ensure "old" lines are removed
+            if (avg(sunkData) < removeFactor) {
+                // ensure "old" lines are remove
                 // this hardcoding will be a problem on any other display size
                 d3.select(this).remove();
                 return
@@ -147,7 +170,9 @@ function sink() {
             
             // linear scale to widen lines as they sink
             // inscreae range to increase lindespread with sink
-            xScaleLin = d3.scaleLinear().domain([size,0]).range([0,200]);
+            // tweek linespread and sinkPow to get the right feeling
+            // of moving through space. 
+            xScaleLin = d3.scaleLinear().domain([size,0]).range([0,spreadRangeLimit]);
 
             // widen effect by increase x range
             xScale.range([0-xScaleLin(i), width+xScaleLin(i)]);
@@ -164,8 +189,26 @@ function sink() {
         })
 }
 
-function addText() {    
+function addText() {
+    d3.selectAll(".heavy").remove();
+
+    textPos = (textPos < 0 ? height : textPos - 1);
+
     d3.select("svg").append("text").attr("class", "heavy").text("SYNTHFRIDAY")
         .attr("x", 30)
-        .attr("y", 400)
+        .attr("y", textPos);
+}
+
+
+function rollWindow() {
+    // removeFactor = (removeFactor > -200 ? height*-1 : removeFactor + 10);
+    
+    if (widenSpreadRange) {
+        widenSpreadRange = (spreadRangeLimit < spreadRangeMax ? true : false)
+    } else {
+        widenSpreadRange = (spreadRangeLimit > spreadRangeMin ? false : true)
+    }
+
+    spreadRangeLimit = (widenSpreadRange ? spreadRangeLimit + spreadSpeed : spreadRangeLimit - spreadSpeed)
+    
 }
