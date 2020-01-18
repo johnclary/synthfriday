@@ -2,6 +2,7 @@
 // https://bl.ocks.org/gordlea/27370d1eea8464b04538e6d8ced39e89
 
 var bits = 50;
+var multiplier = 3;
 
 count = 0;
 
@@ -21,16 +22,17 @@ var colorPow = d3.scaleSequential(d3.interpolatePlasma).domain([1,0]);
 var strokePow = d3.scalePow().exponent(4).range([0,1]);
 
 // power scale that sets the rate of line sink
-// increse begin range to increase speed. reduce exponent to increase separation (?)
-var sinkPow = d3.scalePow().exponent(.45).range([5, 0]);
+// increse begin range to increase dropspeed/separation
+// INCREASING range is effctively lowering the viewing plane angle
+var sinkPow = d3.scalePow().exponent(.45).range([20, 0]);
 
 // power scale to set opacity higher as lines sink
-var opacityPow = d3.scalePow().exponent(5).range([1, .5]);
+var opacityPow = d3.scalePow().exponent(5).range([1, .7]);
 
-var yScalePow = d3.scalePow().exponent(4).range([0, 255]);
+var yScalePow = d3.scalePow().exponent(7).range([0, 255]);
 
 var xScale = d3.scaleLinear()
-    .domain([0, bits-1]) // input
+    .domain([0, (bits*multiplier)-1]) // input
     .range([0, width]); // output
 
 var yScale = d3.scaleLinear()
@@ -72,7 +74,7 @@ document.querySelector('#play').addEventListener('click', function() {
         // loop
         requestAnimationFrame(animateChart);
         
-        if (++count % 6){
+        if (++count % 2){
             // animate every other frame
             return false;
         }
@@ -83,6 +85,10 @@ document.querySelector('#play').addEventListener('click', function() {
 
         analyser.getByteFrequencyData(frequencyData);
 
+        lineData = Array.from(frequencyData);
+
+        lineData = lineData.concat(lineData).concat(lineData);
+        
         var avgFreq = avg(frequencyData);
 
         var stroke = color(avgFreq);        
@@ -91,7 +97,7 @@ document.querySelector('#play').addEventListener('click', function() {
         xScale.range([0, width]);
 
         svg.append("path")
-            .datum(Array.from(frequencyData).map(x => yScalePow(x/255)))
+            .datum(Array.from(lineData).map(x => yScalePow(x/255)))
             .attr("class", "line")
             .attr("stroke", stroke)
             .attr("opacity", .05) 
@@ -134,7 +140,7 @@ function sink() {
                 return value - sinkPow(i/size)
             } );
 
-            if (avg(sunkData) < -350) {
+            if (avg(sunkData) < -450) {
                 // ensure "old" lines are remove
                 // this hardcoding will be a problem on any other display size
                 d3.select(this).remove();
@@ -149,7 +155,9 @@ function sink() {
             
             // linear scale to widen lines as they sink
             // inscreae range to increase lindespread with sink
-            xScaleLin = d3.scaleLinear().domain([size,0]).range([0,1000]);
+            // tweek linespread and sinkPow to get the right feeling
+            // of moving through space. 
+            xScaleLin = d3.scaleLinear().domain([size,0]).range([0,6000]);
 
             // widen effect by increase x range
             xScale.range([0-xScaleLin(i), width+xScaleLin(i)]);
@@ -169,5 +177,5 @@ function sink() {
 function addText() {    
     d3.select("svg").append("text").attr("class", "heavy").text("SYNTHFRIDAY")
         .attr("x", 30)
-        .attr("y", 400)
+        .attr("y", 600)
 }
