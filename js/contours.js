@@ -15,8 +15,11 @@ var textPos = height*.75;
 
 var removeFactor = -1*height; 
 
-var removeFactorScale = d3.scalePow().exponent(.8).range([1,20]);
-
+var widenSpreadRange = true;
+var spreadRangeMin = 2000
+var spreadRangeLimit = spreadRangeMin;
+var spreadRangeMax = 20000;
+var spreadSpeed = 100;
 
 // linear scale for init line color
 var color = d3.scaleSequential(d3.interpolatePlasma).domain([0,200]);
@@ -52,7 +55,9 @@ var line = d3.line()
     .y(function(d) { return yScale(d); })
     .curve(d3.curveMonotoneX)
 
-document.querySelector('#play').addEventListener('click', function() {
+var track = document.getElementsByTagName("audio")[0]
+
+track.addEventListener("playing", function() {
 
     var element = document.getElementById("play");
     element.parentNode.removeChild(element);
@@ -64,8 +69,8 @@ document.querySelector('#play').addEventListener('click', function() {
         .attr("height", height);
 
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    var audioElement = document.getElementById('audioElement');
-    audioElement.play();
+    // var audioElement = document.getElementById('audioElement');
+    // audioElement.play();
 
     var audioSrc = audioCtx.createMediaElementSource(audioElement);
     var analyser = audioCtx.createAnalyser();
@@ -150,7 +155,7 @@ function sink() {
                 return value - sinkPow(i/size)
             } );
 
-            if (avg(sunkData) < removeFactorScale(removeFactor/1)) {
+            if (avg(sunkData) < removeFactor) {
                 // ensure "old" lines are remove
                 // this hardcoding will be a problem on any other display size
                 d3.select(this).remove();
@@ -167,7 +172,7 @@ function sink() {
             // inscreae range to increase lindespread with sink
             // tweek linespread and sinkPow to get the right feeling
             // of moving through space. 
-            xScaleLin = d3.scaleLinear().domain([size,0]).range([0,7500]);
+            xScaleLin = d3.scaleLinear().domain([size,0]).range([0,spreadRangeLimit]);
 
             // widen effect by increase x range
             xScale.range([0-xScaleLin(i), width+xScaleLin(i)]);
@@ -196,5 +201,14 @@ function addText() {
 
 
 function rollWindow() {
-    removeFactor = (removeFactor > 0 ? height*-1 : removeFactor + 5);
+    // removeFactor = (removeFactor > -200 ? height*-1 : removeFactor + 10);
+    
+    if (widenSpreadRange) {
+        widenSpreadRange = (spreadRangeLimit < spreadRangeMax ? true : false)
+    } else {
+        widenSpreadRange = (spreadRangeLimit > spreadRangeMin ? false : true)
+    }
+
+    spreadRangeLimit = (widenSpreadRange ? spreadRangeLimit + spreadSpeed : spreadRangeLimit - spreadSpeed)
+    
 }
