@@ -101,8 +101,6 @@ document.getElementById("play").addEventListener("click", function(){
         if (count < 450){
             addText();
         }
-        
-        rollWindow();
 
         analyser.getByteFrequencyData(frequencyData);
 
@@ -112,6 +110,8 @@ document.getElementById("play").addEventListener("click", function(){
         
         var avgFreq = avg(frequencyData);
 
+        rollWindow(avgFreq);
+
         var stroke = color(avgFreq);        
 
         // reset xScale which has changed during sink
@@ -120,7 +120,7 @@ document.getElementById("play").addEventListener("click", function(){
         svg.append("path")
             .datum(Array.from(lineData).map(x => yScalePow(x/255)))
             .attr("class", "line")
-            .attr("stroke", stroke)
+            .attr("stroke", colorPow(.5))
             .attr("opacity", .05) 
             .attr("d", line);
 
@@ -207,22 +207,22 @@ function addText() {
 }
 
 
-function rollWindow() {
+function rollWindow(val) {
     // removeFactor = (removeFactor > -200 ? height*-1 : removeFactor + 10);
     
-    if (widenSpreadRange) {
-        widenSpreadRange = (spreadRangeLimit < spreadRangeMax ? true : false)
-    } else {
-        widenSpreadRange = (spreadRangeLimit > spreadRangeMin ? false : true)
-    }
+    // if (widenSpreadRange) {
+    //     widenSpreadRange = (spreadRangeLimit < spreadRangeMax ? true : false)
+    // } else {
+    //     widenSpreadRange = (spreadRangeLimit > spreadRangeMin ? false : true)
+    // }
 
     
-    if (sinkUp) {
-        sinkUp = (sinkExponent < sinkExponentMax ? true : false)
-    } else {
-        sinkUp = (sinkExponent > sinkExponentMin ? false : true)
-    }
-
-    spreadRangeLimit = (widenSpreadRange ? spreadRangeLimit + spreadSpeed : spreadRangeLimit - spreadSpeed);
-    sinkExponent = (sinkUp ? sinkExponent + sinkExponentIncrement : sinkExponent - sinkExponentIncrement);
+    // if (sinkUp) {
+    //     sinkUp = (sinkExponent < sinkExponentMax ? true : false)
+    // } else {
+    //     sinkUp = (sinkExponent > sinkExponentMin ? false : true)
+    // }
+    console.log(val);
+    // spreadRangeLimit = (widenSpreadRange ? spreadRangeLimit + spreadSpeed : spreadRangeLimit - spreadSpeed);
+    // sinkExponent = (sinkUp ? sinkExponent + sinkExponentIncrement : sinkExponent - sinkExponentIncrement);
 }
