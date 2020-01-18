@@ -14,6 +14,8 @@ var height = window.innerHeight;
 var textPos = height*.8;
 
 var removeFactor = -1*height; 
+var removeMactorMax = -100;
+var removeFactorIncrement = 5;
 
 var widenSpreadRange = true;
 var spreadRangeMin = 4000;
@@ -101,6 +103,8 @@ document.getElementById("play").addEventListener("click", function(){
         if (count < 450){
             addText();
         }
+        
+        rollWindow();
 
         analyser.getByteFrequencyData(frequencyData);
 
@@ -110,8 +114,6 @@ document.getElementById("play").addEventListener("click", function(){
         
         var avgFreq = avg(frequencyData);
 
-        rollWindow(avgFreq);
-
         var stroke = color(avgFreq);        
 
         // reset xScale which has changed during sink
@@ -120,7 +122,7 @@ document.getElementById("play").addEventListener("click", function(){
         svg.append("path")
             .datum(Array.from(lineData).map(x => yScalePow(x/255)))
             .attr("class", "line")
-            .attr("stroke", colorPow(.5))
+            .attr("stroke", stroke)
             .attr("opacity", .05) 
             .attr("d", line);
 
@@ -161,7 +163,7 @@ function sink() {
                 return value - sinkPow(i/size)
             } );
 
-            if (avg(sunkData) < -300) {
+            if (avg(sunkData) < removeFactor) {
             // if (avg(sunkData) < removeFactor) {
                 // ensure "old" lines are remove
                 // this hardcoding will be a problem on any other display size
@@ -207,14 +209,14 @@ function addText() {
 }
 
 
-function rollWindow(val) {
-    // removeFactor = (removeFactor > -200 ? height*-1 : removeFactor + 10);
+function rollWindow() {
+    removeFactor = (removeFactor > removeMactorMax ? height*-1 : removeFactor + removeFactorIncrement);
     
-    // if (widenSpreadRange) {
-    //     widenSpreadRange = (spreadRangeLimit < spreadRangeMax ? true : false)
-    // } else {
-    //     widenSpreadRange = (spreadRangeLimit > spreadRangeMin ? false : true)
-    // }
+    if (widenSpreadRange) {
+        widenSpreadRange = (spreadRangeLimit < spreadRangeMax ? true : false)
+    } else {
+        widenSpreadRange = (spreadRangeLimit > spreadRangeMin ? false : true)
+    }
 
     
     // if (sinkUp) {
@@ -222,7 +224,8 @@ function rollWindow(val) {
     // } else {
     //     sinkUp = (sinkExponent > sinkExponentMin ? false : true)
     // }
-    console.log(val);
-    // spreadRangeLimit = (widenSpreadRange ? spreadRangeLimit + spreadSpeed : spreadRangeLimit - spreadSpeed);
+
+    spreadRangeLimit = (widenSpreadRange ? spreadRangeLimit + spreadSpeed : spreadRangeLimit - spreadSpeed);
     // sinkExponent = (sinkUp ? sinkExponent + sinkExponentIncrement : sinkExponent - sinkExponentIncrement);
 }
+ 
