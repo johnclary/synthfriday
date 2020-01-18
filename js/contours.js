@@ -11,22 +11,28 @@ var frequencyData;
 var width = window.innerWidth;
 var height = window.innerHeight;
 
-var textPos = height*.75;
+var textPos = height*.8;
 
 var removeFactor = -1*height; 
 
 var widenSpreadRange = true;
-var spreadRangeMin = 2000
+var spreadRangeMin = 4000;
 var spreadRangeLimit = spreadRangeMin;
-var spreadRangeMax = 20000;
-var spreadSpeed = 100;
+var spreadRangeMax = 5000;
+var spreadSpeed = 50;
+
+var sinkExponentMin = 6
+var sinkExponentMax = 7;
+var sinkExponent = sinkExponentMin;
+var sinkExponentIncrement = .1
+var sinkUp = true;
 
 // linear scale for init line color
 var color = d3.scaleSequential(d3.interpolatePlasma).domain([0,200]);
 
 // linear color scale to be wrapped by stroke power scale
 // reverse domain to flip color scale
-var colorPow = d3.scaleSequential(d3.interpolatePlasma).domain([1,0]);
+var colorPow = d3.scaleSequential(d3.interpolatePlasma).domain([.7,0]);
 
 // power scale which decrease line color variation as lines sink
 // adjust range to limit color scale min/max
@@ -35,10 +41,10 @@ var strokePow = d3.scalePow().exponent(4).range([0,1]);
 // power scale that sets the rate of line sink
 // increse begin range to increase dropspeed/separation
 // decrease exponent and begin range to lower viewing angle
-var sinkPow = d3.scalePow().exponent(7).range([10, 0]);
+var sinkPow = d3.scalePow().exponent(sinkExponent).range([10, 0]);
 
 // power scale to set opacity higher as lines sink
-var opacityPow = d3.scalePow().exponent(5).range([1, .7]);
+var opacityPow = d3.scalePow().exponent(5).range([1, .5]);
 
 var yScalePow = d3.scalePow().exponent(7).range([0, 255]);
 
@@ -55,12 +61,12 @@ var line = d3.line()
     .y(function(d) { return yScale(d); })
     .curve(d3.curveMonotoneX)
 
-var track = document.getElementsByTagName("audio")[0]
+// var track = document.getElementsByTagName("audio")[0]
 
-track.addEventListener("playing", function() {
+// track.addEventListener("playing", function() {
+document.getElementById("play").addEventListener("click", function(){
 
-    var element = document.getElementById("play");
-    element.parentNode.removeChild(element);
+    this.parentNode.removeChild(this);
 
     // create svg container
     svg = d3.select("body")
@@ -69,8 +75,8 @@ track.addEventListener("playing", function() {
         .attr("height", height);
 
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // var audioElement = document.getElementById('audioElement');
-    // audioElement.play();
+    var audioElement = document.getElementById('audioElement');
+    audioElement.play();
 
     var audioSrc = audioCtx.createMediaElementSource(audioElement);
     var analyser = audioCtx.createAnalyser();
@@ -155,7 +161,8 @@ function sink() {
                 return value - sinkPow(i/size)
             } );
 
-            if (avg(sunkData) < removeFactor) {
+            if (avg(sunkData) < -300) {
+            // if (avg(sunkData) < removeFactor) {
                 // ensure "old" lines are remove
                 // this hardcoding will be a problem on any other display size
                 d3.select(this).remove();
@@ -209,6 +216,13 @@ function rollWindow() {
         widenSpreadRange = (spreadRangeLimit > spreadRangeMin ? false : true)
     }
 
-    spreadRangeLimit = (widenSpreadRange ? spreadRangeLimit + spreadSpeed : spreadRangeLimit - spreadSpeed)
     
+    if (sinkUp) {
+        sinkUp = (sinkExponent < sinkExponentMax ? true : false)
+    } else {
+        sinkUp = (sinkExponent > sinkExponentMin ? false : true)
+    }
+
+    spreadRangeLimit = (widenSpreadRange ? spreadRangeLimit + spreadSpeed : spreadRangeLimit - spreadSpeed);
+    sinkExponent = (sinkUp ? sinkExponent + sinkExponentIncrement : sinkExponent - sinkExponentIncrement);
 }
