@@ -27,6 +27,8 @@ var sinkPow = d3.scalePow().exponent(.45).range([5, 0]);
 // power scale to set opacity higher as lines sink
 var opacityPow = d3.scalePow().exponent(5).range([1, .5]);
 
+var yScalePow = d3.scalePow().exponent(4).range([0, 255]);
+
 var xScale = d3.scaleLinear()
     .domain([0, bits-1]) // input
     .range([0, width]); // output
@@ -70,7 +72,7 @@ document.querySelector('#play').addEventListener('click', function() {
         // loop
         requestAnimationFrame(animateChart);
         
-        if (++count % 2){
+        if (++count % 6){
             // animate every other frame
             return false;
         }
@@ -89,7 +91,7 @@ document.querySelector('#play').addEventListener('click', function() {
         xScale.range([0, width]);
 
         svg.append("path")
-            .datum(Array.from(frequencyData))
+            .datum(Array.from(frequencyData).map(x => yScalePow(x/255)))
             .attr("class", "line")
             .attr("stroke", stroke)
             .attr("opacity", .05) 
@@ -133,7 +135,7 @@ function sink() {
             } );
 
             if (avg(sunkData) < -350) {
-                // ensure "old" lines are removed
+                // ensure "old" lines are remove
                 // this hardcoding will be a problem on any other display size
                 d3.select(this).remove();
                 return
@@ -147,7 +149,7 @@ function sink() {
             
             // linear scale to widen lines as they sink
             // inscreae range to increase lindespread with sink
-            xScaleLin = d3.scaleLinear().domain([size,0]).range([0,200]);
+            xScaleLin = d3.scaleLinear().domain([size,0]).range([0,1000]);
 
             // widen effect by increase x range
             xScale.range([0-xScaleLin(i), width+xScaleLin(i)]);
